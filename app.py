@@ -1,4 +1,4 @@
-import csv
+mport csv
 import os
 
 row = []
@@ -8,7 +8,7 @@ def menu(username="@mariaali", products_count=100):
     -----------------------------------
     INVENTORY MANAGEMENT APPLICATION
     -----------------------------------
-    Welcome {username}!
+    Welcome {MariaALI}!
     There are {products_count} products in the database.
         operation | description
         --------- | ------------------
@@ -50,6 +50,7 @@ def reset_products_file(filename="products.csv", from_filename="products_default
     print("RESETTING DEFAULTS")
     products = read_products_from_file(from_filename)
     write_products_to_file(filename, products)
+    return products
 
 
 def auto_incremented_id(products):
@@ -59,10 +60,28 @@ def auto_incremented_id(products):
     next_id = max_id + 1
     return next_id
 
+def find_product(products, id):
+    for i, p in enumerate(products):
+        if p["id"] == id:
+            return i, p
+    print("Sorry, product id", id, "has not been found")
+    return None, None
+
+def input_product_data():
+    data = dict()
+    for field in ("name", "department", "aisle", "price"):
+        value = input("Please, enter " + field + ": ")
+        data[field] = value
+    return data
+
 
 def run():
 
-    products = read_products_from_file()
+    try:
+        products = read_products_from_file()
+    except FileNotFoundError:
+        print("Unable to open the inventory, resetting to default")
+        products = reset_products_file()
 
     number_of_products = len(products)
     my_menu = menu(username="@some-user", products_count=number_of_products)
@@ -78,105 +97,51 @@ def run():
     elif operation == "Show":
         print("SHOWING A PRODUCT")
         product_id = input("HEY, whats the identifier of the product you want to display: ")
-        matching_product = [p for p in products if int(p["id"]) == int(product_id)]
-        matching_product = matching_product[0]
-        print(matching_product)
+        product_index, matching_product = find_product(products, product_id)
+        #matching_product = matching_product[0]
+        if matching_product is not None:
+            print(matching_product)
 
 
     elif operation == "Create":
-        new_id = int(products[-1]["id"]) + 1
-
-        new_product = {
-            "id": new_id,
-            "name": "New Product",
-            "aisle": "new aisle",
-            "department": "new dept",
-            "price": 100.00
-        } # todo: capture user input
-        products.append(new_product)
-        print("CREATING A NEW PRODUCT", new_product)
-
-
-
-
+        product_data = input_product_data()
+        product_data["id"] = str(auto_incremented_id(products))
+        products.append(product_data)
+        print("CREATING A NEW PRODUCT", product_data)
+        write_products_to_file(products=products)
 
 
     elif operation == "Update":
-        product_id = input("HEY, what's the identifier of the product you want to display: ")
-        matching_product = [p for p in products if int(p["id"]) == int(product_id)]
-        matching_product = matching_product[0]
-#todo:prompt the user for new attributes
-        new_price = 200.00
-        matching_product["price"] = new_price
-        print("UPDATING A PRODUCT")
+        product_id = input("HEY, what's the identifier of the product you want to update: ")
+        product_index, matching_product = find_product(products, product_id)
+        if matching_product is not None:
+            matching_product.update(input_product_data())
+            print("UPDATING A PRODUCT", matching_product)
+            write_products_to_file(products=products)
 
 
-
-    products = read_products_from_file()
-
-    number_of_products = len(products)
-    my_menu = menu(username="@some-user", products_count=number_of_products)
-    operation = input(my_menu)
-    #print("YOU CHOSE: " + operation)
-    operation = operation.title()
-
-    if operation == "List":
-        print("LISTING PRODUCTS")
-        for p in products:
-            print("   " + p["id"] + " " +  p["name"])
-
-    elif operation == "Show":
-        print("SHOWING A PRODUCT")
-        product_id = input("HEY, whats the identifier of the product you want to display: ")
-        matching_product = [p for p in products if int(p["id"]) == int(product_id)]
-        matching_product = matching_product[0]
-        print(matching_product)
-
-
-    elif operation == "Create":
-        new_id = auto_incremented_id(products)
-        new_product = {
-            "id": new_id,
-            "name": "New Product",
-            "aisle": "new aisle",
-            "department": "new dept",
-            "price": 100.00
-        } # todo: capture user input
-        products.append(new_product)
-        print("CREATING A NEW PRODUCT", new_product)
-
-
-
-
-
-
-    elif operation == "Update":
-        product_id = input("HEY, what's the identifier of the product you want to display: ")
-        matching_product = [p for p in products if int(p["id"]) == int(product_id)]
-        matching_product = matching_product[0]
 
     elif operation == "Destroy":
-        product_id = input("HEY, what's the identifier of the product you want to display: ")
-        matching_product = [p for p in products if int(p["id"]) == int(product_id)]
-        matching_product = matching_product[0]
-        del products[products.index(matching_product)]
-        print("DELETING A PRODUCT")
+        product_id = input("HEY, what's the identifier of the product you want to destroy: ")
+        product_index, matching_product = find_product(products, product_id)
+        #matching_product = [p for p in products if int(p["id"]) == int(product_id)]
+        #matching_product = matching_product[0]
+        if product_index is not None:
+            del products[product_index]
+            print("DELETING A PRODUCT", matching_product)
+            write_products_to_file(products=products)
 
 
-
-
-    elif operation == "RESET":
-        reset_products_file()
+    elif operation == "Reset":
+        products = reset_products_file()
     else:
         print("OOPS, unrecognized opertion, please select one of 'List', 'Show', 'Create', 'Destroy' or 'Reset'")
 
-    write_products_to_file(products=products)
 
 
 
-
-def enlarge(my_number):
-    return my_number * 100
+#def enlarge(my_number):
+#    return my_number * 100
 
 
 
@@ -194,4 +159,3 @@ def enlarge(my_number):
 
 if __name__ == "__main__":
         run()
-
